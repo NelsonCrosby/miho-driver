@@ -7,7 +7,7 @@ type
     svrSock: AsyncSocket
 
   MihoMouseButton = enum
-    mmbLeft = 0, mmbRight = 1
+    mmbLeft = 0, mmbRight = 1, mbMiddle = 2
 
   MihoCommandKind = enum
     mcEmpty,
@@ -37,11 +37,10 @@ proc parseCommand(data: string): tuple[command: MihoCommand, remaining: string] 
   pos += 1
 
   case result.command.kind:
-    of mcRetry, mcClose:
-      return
     of mcEmpty:
       result.command.kind = mcRetry
-      return
+    of mcRetry, mcClose:
+      discard
     of mcMoveMouse:
       if data.len < (pos + 2):
         result.command.kind = mcEmpty
