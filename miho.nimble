@@ -11,6 +11,9 @@ bin           = @[ "miho_driver" ]
 # Dependencies
 requires "nim >= 0.18.0"
 
+when defined(windows):
+  requires "winim >= 2.5"
+
 
 task buildLib, "build libraries":
   let command = "compile --app:lib src/miho.nim"

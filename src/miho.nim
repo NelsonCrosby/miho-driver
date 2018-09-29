@@ -1,29 +1,14 @@
 import asyncnet, asyncdispatch
+import miho.types
+
+when defined(windows):
+  import miho/win/input
 
 
 type
   MihoServer* = ref MihoServerObj
   MihoServerObj = object
     svrSock: AsyncSocket
-
-  MihoMouseButton = enum
-    mmbLeft = 0, mmbRight = 1, mbMiddle = 2
-
-  MihoCommandKind = enum
-    mcEmpty,
-    mcRetry,
-    mcClose,
-    mcMoveMouse,
-    mcClickMouse,
-
-  MihoCommand* = object
-    case kind: MihoCommandKind
-    of mcEmpty, mcRetry, mcClose:
-      discard
-    of mcMoveMouse:
-      dx, dy: int
-    of mcClickMouse:
-      button: MihoMouseButton
 
 
 proc getInt16(data: string, offset: int = 0): int16 =
@@ -51,18 +36,19 @@ proc parseCommand(data: string): tuple[command: MihoCommand, remaining: string] 
     of mcRetry, mcClose:
       discard
 
-    of mcMoveMouse:
+    of mcMouseMove:
       if data.len < (pos + 4):
         notEnoughData
       command.dx = int(getInt16(data, pos))
       command.dy = int(getInt16(data, pos + 2))
       pos += 4
 
-    of mcClickMouse:
-      if data.len < (pos + 1):
+    of mcMouseButton:
+      if data.len < (pos + 2):
         notEnoughData
       command.button = MihoMouseButton(data[pos])
-      pos += 1
+      command.isDown = data[pos + 1] != char(0)
+      pos += 2
 
   result.command = command
   result.remaining = data.substr(pos)
@@ -81,10 +67,8 @@ proc handleCommand(miho: MihoServer; cmd: MihoCommand) =
       discard
     of mcClose:
       echo "closing"
-    of mcMoveMouse:
-      echo "mouse moved (", cmd.dx, ", ", cmd.dy, ")"
-    of mcClickMouse:
-      echo "mouse clicked ", cmd.button
+    of mcMouseMove, mcMouseButton:
+      discard handleMouseCommand(cmd)
 
 
 proc handleClient(miho: MihoServer; address: string; client: AsyncSocket) {.async.} =
