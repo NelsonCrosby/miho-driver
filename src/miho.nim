@@ -61,7 +61,7 @@ proc parseCommand(data: string): tuple[command: MihoCommand, remaining: string] 
 
 proc newMihoServer*(port: Port, address: string = ""): MihoServer =
   new(result)
-  result.svrSock = newAsyncSocket()
+  result.svrSock = newAsyncSocket(buffered = false)
   result.svrSock.setSockOpt(OptReuseAddr, true)
   result.svrSock.bindAddr(port, address)
 
@@ -81,7 +81,13 @@ proc handleCommand(miho: MihoServer; cmd: MihoCommand) =
 proc handleClient(miho: MihoServer; address: string; client: AsyncSocket) {.async.} =
   var data = ""
   while true:
-    data &= await client.recv(1024)
+    let recv = await client.recv(1024)
+    if recv.len == 0:
+      client.close()
+      echo "goodbye ", address
+      return
+
+    data &= recv
     while data.len > 0:
       var command: MihoCommand
       (command, data) = parseCommand(data)
@@ -100,4 +106,5 @@ proc serve*(miho: MihoServer) {.async.} =
 
   while true:
     let (address, client) = await miho.svrSock.acceptAddr()
+    echo "Hello ", address
     asyncCheck miho.handleClient(address, client)
