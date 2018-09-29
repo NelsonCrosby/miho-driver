@@ -26,35 +26,45 @@ type
       button: MihoMouseButton
 
 
+proc getInt16(data: string, offset: int = 0): int16 =
+  return (int16(data[offset]) shl 8) + (int16(data[offset + 1]))
+
+
 proc parseCommand(data: string): tuple[command: MihoCommand, remaining: string] =
-  result.remaining = data
-  if data.len == 0:
+  template notEnoughData() =
     result.command.kind = mcEmpty
+    result.remaining = data
     return
 
+  if data.len == 0:
+    notEnoughData
+  
+  var command: MihoCommand
+
   var pos = 0
-  result.command.kind = MihoCommandKind(data[pos])
+  command.kind = MihoCommandKind(data[pos])
   pos += 1
 
-  case result.command.kind:
+  case command.kind:
     of mcEmpty:
-      result.command.kind = mcRetry
+      command.kind = mcRetry
     of mcRetry, mcClose:
       discard
+
     of mcMoveMouse:
-      if data.len < (pos + 2):
-        result.command.kind = mcEmpty
-        return
-      result.command.dx = int(data[pos])
-      result.command.dy = int(data[pos + 1])
-      pos += 2
+      if data.len < (pos + 4):
+        notEnoughData
+      command.dx = int(getInt16(data, pos))
+      command.dy = int(getInt16(data, pos + 2))
+      pos += 4
+
     of mcClickMouse:
       if data.len < (pos + 1):
-        result.command.kind = mcEmpty
-        return
-      result.command.button = MihoMouseButton(data[pos])
+        notEnoughData
+      command.button = MihoMouseButton(data[pos])
       pos += 1
 
+  result.command = command
   result.remaining = data.substr(pos)
 
 
@@ -72,9 +82,9 @@ proc handleCommand(miho: MihoServer; cmd: MihoCommand) =
     of mcClose:
       echo "closing"
     of mcMoveMouse:
-      echo "mouse moved"
+      echo "mouse moved (", cmd.dx, ", ", cmd.dy, ")"
     of mcClickMouse:
-      echo "mouse clicked"
+      echo "mouse clicked ", cmd.button
 
 
 proc handleClient(miho: MihoServer; address: string; client: AsyncSocket) {.async.} =
