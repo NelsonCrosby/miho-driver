@@ -1,3 +1,5 @@
 nimcache/
 *.so
+*.dll
+*.exe
 /miho_driver

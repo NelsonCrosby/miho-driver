@@ -6,7 +6,7 @@ description   = "Desktop remote control"
 license       = "BSD2"
 srcDir        = "src"
 binDir        = "build"
-bin           = @[ "../miho_driver" ]
+bin           = @[ "miho_driver" ]
 
 # Dependencies
 requires "nim >= 0.18.0"
