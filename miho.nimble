@@ -21,3 +21,6 @@ task buildLib, "build libraries":
     exec "nim " & command
   else:
     selfExec command
+
+task test, "run tests":
+  exec "nim c -r tests/testcbor"

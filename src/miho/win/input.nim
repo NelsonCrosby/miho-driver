@@ -1,6 +1,10 @@
 import winim/inc/windef
 import winim/inc/winuser
-import ../types
+
+
+type
+  MouseButton* = enum
+    mmbLeft, mmbRight, mmbMiddle
 
 
 proc SendInput(command: ptr INPUT): bool =
@@ -14,42 +18,34 @@ proc SendInput(command: MOUSEINPUT): bool =
   result = SendInput(addr(input))
 
 
-proc handleMouseCommand*(command: MihoCommand): bool =
-  result = true
-  case command.kind:
-    of mcMouseMove:
-      var mi: MOUSEINPUT
-      mi.dx = LONG(command.dx)
-      mi.dy = LONG(command.dy)
-      mi.mouseData = DWORD(0)
-      mi.dwFlags = MOUSEEVENTF_MOVE
-      mi.time = DWORD(0)
-      mi.dwExtraInfo = ULONG_PTR(0)
-      discard SendInput(mi)
+proc mouseMove*(dx: int, dy: int) =
+  var mi: MOUSEINPUT
+  mi.dx = LONG(dx)
+  mi.dy = LONG(dy)
+  mi.mouseData = DWORD(0)
+  mi.dwFlags = MOUSEEVENTF_MOVE
+  mi.time = DWORD(0)
+  mi.dwExtraInfo = ULONG_PTR(0)
+  discard SendInput(mi)
 
-    of mcMouseButton:
-      var mi: MOUSEINPUT
-      mi.dx = LONG(0)
-      mi.dy = LONG(0)
-      mi.mouseData = DWORD(0)
-      mi.time = DWORD(0)
-      mi.dwExtraInfo = ULONG_PTR(0)
+proc mouseButton*(btn: MouseButton, isDown: bool) =
+  var mi: MOUSEINPUT
+  mi.dx = LONG(0)
+  mi.dy = LONG(0)
+  mi.mouseData = DWORD(0)
+  mi.time = DWORD(0)
+  mi.dwExtraInfo = ULONG_PTR(0)
 
-      case command.button:
-        of mmbLeft:
-          mi.dwFlags =
-            if command.isDown: MOUSEEVENTF_LEFTDOWN
-            else: MOUSEEVENTF_LEFTUP
-        of mmbRight:
-          mi.dwFlags =
-            if command.isDown: MOUSEEVENTF_RIGHTDOWN
-            else: MOUSEEVENTF_RIGHTUP
-        of mmbMiddle:
-          mi.dwFlags =
-            if command.isDown: MOUSEEVENTF_MIDDLEDOWN
-            else: MOUSEEVENTF_MIDDLEUP
-      
-      discard SendInput(mi)
-
-    else:
-      result = false
+  mi.dwFlags =
+    case btn:
+      of mmbLeft:
+        if isDown: MOUSEEVENTF_LEFTDOWN
+        else: MOUSEEVENTF_LEFTUP
+      of mmbRight:
+        if isDown: MOUSEEVENTF_RIGHTDOWN
+        else: MOUSEEVENTF_RIGHTUP
+      of mmbMiddle:
+        if isDown: MOUSEEVENTF_MIDDLEDOWN
+        else: MOUSEEVENTF_MIDDLEUP
+  
+  discard SendInput(mi)
