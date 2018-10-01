@@ -2,6 +2,8 @@ import ../subsystem
 
 when defined(windows):
   import ../win/input
+else:
+  import ../stub/input
 
 
 type
