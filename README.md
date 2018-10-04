@@ -29,9 +29,9 @@ mother.
 
 - [x] Simple mouse move and button control
 - [x] Extensible protocol and architecture
-- [ ] Stubs for testing without really affecting the host
+- [x] Stubs for testing without really affecting the host
   or requiring platform support
-- [ ] Client library (again for testing)
+- [x] Client library (again for testing)
 - [ ] More stable error handling
   - Right now there's a lot of assertions for protocol-related things that the
     client is expected to get right. These need to be translated to proper
