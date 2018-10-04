@@ -83,6 +83,10 @@ type
     of skMap:
       keyStored: bool
       entries: seq[tuple[key, value: CborObject]]
+  
+  CborError* = object of Exception
+  CborParseError* = object of CborError
+  CborEncodeError* = object of CborError
 
 
 proc decodeItemInfo(data: string, offset: int):
@@ -193,7 +197,7 @@ proc nextCborItem*(data: string, offset: int = 0):
     elif info == 31:
       result.item.kind = cbBreak
     else:
-      assert false, "unassigned value of 7:" & $info
+      raise newException(CborParseError, "unassigned value of 7:" & $info)
 
   result.position = pos
 
@@ -444,10 +448,10 @@ proc parseItem(parser: CborParser, state: CborParserState):
         of 23:
           result.obj.kind = cboUndefined
         else:
-          assert false, "Don't understand simple value " & $item.info
+          raise newException(CborParseError, "unknown simple value " & $item.info)
 
     of cbBreak:
-      assert false, "Unexpected break :("
+      raise newException(CborParseError, "unexpected break")
 
     of cbFloatHalf, cbFloatSingle:
       result.obj.kind = cboFloat

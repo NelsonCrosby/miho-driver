@@ -1,3 +1,4 @@
+import ../error
 import ../subsystem
 
 when defined(windows):
@@ -26,15 +27,28 @@ method handleCommand*(
 
   case MouseCommandKind(instruction):
     of mcMove:
-      assert arguments[0].kind == cboInteger
-      assert arguments[1].kind == cboInteger
+      arguments.checkLength(2)
+      arguments[0].checkKind("dx", 0, cboInteger)
+      arguments[1].checkKind("dy", 1, cboInteger)
+
       let dx = arguments[0].value
       let dy = arguments[1].value
       mouseMove(dx, dy)
 
     of mcButton:
-      assert arguments[0].kind == cboInteger
-      assert arguments[1].kind == cboBoolean
+      arguments.checkLength(2)
+      arguments[0].checkKind("button", 0, cboInteger)
+      arguments[1].checkKind("down", 1, cboBoolean)
+
       let btn = arguments[0].value
       let isDown = arguments[1].enabled
+
+      checkTrue("button", 0, "be a valid button",
+        btn == int(mmbLeft) or
+        btn == int(mmbRight) or
+        btn == int(mmbMiddle))
+
       mouseButton(MouseButton(btn), isDown)
+
+    else:
+      checkCommand(instruction)

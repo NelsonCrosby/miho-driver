@@ -80,17 +80,17 @@ proc handleClient(miho: MihoServer; address: string; client: AsyncSocket) {.asyn
         error: bool = false
       try:
         (complete, msg) = parser.parse()
-      except AssertionError:
+      except CborParseError:
         error = true
         msg = createError(int(MihoErrorCode.cborParse), getCurrentExceptionMsg())
+      except Exception:
+        error = true
+        msg = createError(int(MihoErrorCode.cborParse), "internal error")
         when not defined(release):
           let exc = getCurrentException()
           stderr.writeLine("Traceback (most recent call last; client ", address, ")")
           stderr.write(exc.getStackTrace())
           stderr.writeLine(exc.name, ": ", exc.msg)
-      except Exception:
-        error = true
-        msg = createError(int(MihoErrorCode.cborParse), getCurrentExceptionMsg())
 
       if error:
         await client.send(msg.encode())
@@ -99,11 +99,25 @@ proc handleClient(miho: MihoServer; address: string; client: AsyncSocket) {.asyn
         return
 
       if complete:
+        var errorMsg = ""
         if msg.kind != cboArray:
-          msg = createError(int(MihoErrorCode.messageType), "message must be of kind array")
+          error = true
+          errorMsg = "message must be of kind array"
+        elif msg.items.len < 2:
+          error = true
+          errorMsg = "message must be at least 2 items long"
+        elif msg.items[0].kind != cboInteger:
+          error = true
+          errorMsg = "message subsystem (0) must be of kind integer"
+        elif msg.items[1].kind != cboInteger:
+          error = true
+          errorMsg = "message command (1) must be of kind integer"
+        
+        if error:
+          msg = createError(int(MihoErrorCode.message), errorMsg)
           await client.send(msg.encode())
           client.close()
-          echo "goodbye ", address, " (invalid message type)"
+          echo "goodbye ", address, " (invalid message)"
           return
 
         var items = msg.items
@@ -117,11 +131,16 @@ proc handleClient(miho: MihoServer; address: string; client: AsyncSocket) {.asyn
         try:
           (respond, response) =
             miho.subsystems[subsystem].handleCommand(command, arguments)
+        except MihoError:
+          error = true
+          respond = true
+          let exc = (ref MihoError)(getCurrentException())
+          response = createError(int(exc.code), exc.msg)
         except Exception:
           error = true
           respond = true
           let exc = getCurrentException()
-          response = createError(int(MihoErrorCode.exception), exc.msg)
+          response = createError(int(MihoErrorCode.exception), "internal error")
           when not defined(release):
             stderr.writeLine("Traceback (most recent call last; client ", address, ")")
             stderr.write(exc.getStackTrace())
