@@ -360,7 +360,7 @@ proc parseItem(parser: CborParser, state: CborParserState):
       result.obj.value = int(item.value)
     of cbNegative:
       result.obj.kind = cboInteger
-      result.obj.value = -int(item.value)
+      result.obj.value = -1 - int(item.value)
 
     of cbByteString, cbTextString:
       result.obj.kind = cboString
@@ -467,7 +467,7 @@ proc item*(obj: CborObject): CborItem =
     of cboInteger:
       if obj.value < 0:
         result.kind = cbNegative
-        result.value = uint64(-obj.value)
+        result.value = uint64(-obj.value) - 1
       else:
         result.kind = cbPositive
         result.value = uint64(obj.value)

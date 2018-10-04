@@ -1,5 +1,6 @@
 import strutils
 import asyncnet, asyncdispatch
+import miho.error
 import miho.cbor
 import miho.subsystem
 import miho.subsystem.mouse
@@ -46,6 +47,20 @@ proc newMihoServer*(port: Port, address: string = ""): MihoServer =
   ]
 
 
+proc createError(code: int, message: string): CborObject =
+  result.kind = cboArray
+  result.items.newSeq(4)
+  result.items[0].kind = cboInteger
+  result.items[0].value = 0
+  result.items[1].kind = cboInteger
+  result.items[1].value = -1
+  result.items[2].kind = cboInteger
+  result.items[2].value = code
+  result.items[3].kind = cboString
+  result.items[3].isText = true
+  result.items[3].data = message
+
+
 proc handleClient(miho: MihoServer; address: string; client: AsyncSocket) {.async.} =
   echo "hello ", address
   var parser = newCborParser()
@@ -60,21 +75,66 @@ proc handleClient(miho: MihoServer; address: string; client: AsyncSocket) {.asyn
     parser.add(recv)
     var complete = true
     while complete:
-      var msg: CborObject
-      (complete, msg) = parser.parse()
+      var
+        msg: CborObject
+        error: bool = false
+      try:
+        (complete, msg) = parser.parse()
+      except AssertionError:
+        error = true
+        msg = createError(int(MihoErrorCode.cborParse), getCurrentExceptionMsg())
+        when not defined(release):
+          let exc = getCurrentException()
+          stderr.writeLine("Traceback (most recent call last; client ", address, ")")
+          stderr.write(exc.getStackTrace())
+          stderr.writeLine(exc.name, ": ", exc.msg)
+      except Exception:
+        error = true
+        msg = createError(int(MihoErrorCode.cborParse), getCurrentExceptionMsg())
+
+      if error:
+        await client.send(msg.encode())
+        client.close()
+        echo "goodbye ", address, " (error in parsing cbor)"
+        return
 
       if complete:
+        if msg.kind != cboArray:
+          msg = createError(int(MihoErrorCode.messageType), "message must be of kind array")
+          await client.send(msg.encode())
+          client.close()
+          echo "goodbye ", address, " (invalid message type)"
+          return
+
         var items = msg.items
         let subsystem = items[0].value
         let command = items[1].value
         let arguments = items[2..items.high]
 
-        let (respond, response) =
-          miho.subsystems[subsystem].handleCommand(command, arguments)
+        var
+          respond: bool
+          response: CborObject
+        try:
+          (respond, response) =
+            miho.subsystems[subsystem].handleCommand(command, arguments)
+        except Exception:
+          error = true
+          respond = true
+          let exc = getCurrentException()
+          response = createError(int(MihoErrorCode.exception), exc.msg)
+          when not defined(release):
+            stderr.writeLine("Traceback (most recent call last; client ", address, ")")
+            stderr.write(exc.getStackTrace())
+            stderr.writeLine(exc.name, ": ", exc.msg)
 
         if respond:
           let res = response.encode()
           await client.send(res)
+          if error:
+            client.close()
+            echo "goodbye ", address,
+              " (error in processing command ", subsystem, ":", command, ")"
+            return
 
 
 proc serve*(miho: MihoServer) {.async.} =
