@@ -17,7 +17,9 @@ class Miho:
         self.sock.connect(addr)
 
         self.subsystems = {}
-        for i, name in enumerate(self.query(0, 0), 1):
+        result = self.query(0, 0)
+        assert result[0] == 0 and result[1] == 0
+        for i, name in enumerate(result[2], 1):
             self.subsystems[name] = i
             if name in _subsystems:
                 cls, attr = _subsystems[name]

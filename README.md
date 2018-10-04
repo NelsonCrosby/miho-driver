@@ -33,10 +33,13 @@ mother.
   or requiring platform support
 - [x] Client library (again for testing)
 - [ ] More stable error handling
-  - Right now there's a lot of assertions for protocol-related things that the
+  - ~~Right now there's a lot of assertions for protocol-related things that the
     client is expected to get right. These need to be translated to proper
     error handling (probably by just terminating the connection, maybe with a
-    diagnostic for client debugging).
+    diagnostic for client debugging).~~
+  - Most of the assertions have been removed, and there's a much better error
+    handling system now. There's still a couple of assertions for parts of
+    CBOR that I haven't yet implemented, but they are still handled.
 - [ ] More options for running from command-line (e.g. port)
 - [ ] SSH transport layer
 - [ ] Begin more user-friendly interface (will be separate project)

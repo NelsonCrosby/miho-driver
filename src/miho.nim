@@ -21,7 +21,7 @@ method handleCommand*(
   instruction: int,
   arguments: seq[CborObject]
 ): HandleResult =
-  result.respond = true
+  result.status = 0
   result.response.kind = cboArray
   result.response.items.newSeq(core.svr.subsystems.len - 1)
   for i in 1..core.svr.subsystems.high:
@@ -49,16 +49,12 @@ proc newMihoServer*(port: Port, address: string = ""): MihoServer =
 
 proc createError(code: int, message: string): CborObject =
   result.kind = cboArray
-  result.items.newSeq(4)
+  result.items.newSeq(2)
   result.items[0].kind = cboInteger
-  result.items[0].value = 0
-  result.items[1].kind = cboInteger
-  result.items[1].value = -1
-  result.items[2].kind = cboInteger
-  result.items[2].value = code
-  result.items[3].kind = cboString
-  result.items[3].isText = true
-  result.items[3].data = message
+  result.items[0].value = code
+  result.items[1].kind = cboString
+  result.items[1].isText = true
+  result.items[1].data = message
 
 
 proc handleClient(miho: MihoServer; address: string; client: AsyncSocket) {.async.} =
@@ -126,19 +122,21 @@ proc handleClient(miho: MihoServer; address: string; client: AsyncSocket) {.asyn
         let arguments = items[2..items.high]
 
         var
-          respond: bool
+          status: int
+          respond = true
           response: CborObject
         try:
-          (respond, response) =
+          (status, response) =
             miho.subsystems[subsystem].handleCommand(command, arguments)
+          respond = status >= 0
         except MihoError:
           error = true
-          respond = true
+          status = -1
           let exc = (ref MihoError)(getCurrentException())
           response = createError(int(exc.code), exc.msg)
         except Exception:
           error = true
-          respond = true
+          status = -1
           let exc = getCurrentException()
           response = createError(int(MihoErrorCode.exception), "internal error")
           when not defined(release):
@@ -147,8 +145,17 @@ proc handleClient(miho: MihoServer; address: string; client: AsyncSocket) {.asyn
             stderr.writeLine(exc.name, ": ", exc.msg)
 
         if respond:
-          let res = response.encode()
-          await client.send(res)
+          var message: CborObject
+          message.kind = cboArray
+          message.items.newSeq(3)
+          message.items[0].kind = cboInteger
+          message.items[0].value = subsystem
+          message.items[1].kind = cboInteger
+          message.items[1].value = status
+          message.items[2] = response
+
+          let msg = message.encode()
+          await client.send(msg)
           if error:
             client.close()
             echo "goodbye ", address,

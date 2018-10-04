@@ -7,7 +7,7 @@ type
   Subsystem* = object of RootObj
     name*: string
   
-  HandleResult* = tuple[respond: bool, response: CborObject]
+  HandleResult* = tuple[status: int, response: CborObject]
 
 
 proc newSubsystem*[T: Subsystem](name: string): ref T =
@@ -19,4 +19,4 @@ method handleCommand*(
   instruction: int,
   arguments: seq[CborObject]
 ): HandleResult {.base.} =
-  result.respond = false
+  result.status = -1

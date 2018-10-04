@@ -518,10 +518,10 @@ proc encode*(obj: CborObject): string =
   case obj.kind:
     of cboArray:
       for ob in obj.items:
-        result &= ob.item.encode()
+        result &= ob.encode()
     of cboTable:
       for i, pair in obj.entries:
-        result &= pair.key.item.encode()
-        result &= pair.value.item.encode()
+        result &= pair.key.encode()
+        result &= pair.value.encode()
     else:
       discard

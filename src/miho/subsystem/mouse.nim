@@ -23,7 +23,7 @@ method handleCommand*(
   instruction: int,
   arguments: seq[CborObject]
 ): HandleResult =
-  result.respond = false
+  result.status = -1
 
   case MouseCommandKind(instruction):
     of mcMove:
