@@ -40,7 +40,7 @@ mother.
   - Most of the assertions have been removed, and there's a much better error
     handling system now. There's still a couple of assertions for parts of
     CBOR that I haven't yet implemented, but they are still handled.
-- [ ] More options for running from command-line (e.g. port)
+- [x] More options for running from command-line (e.g. port)
 - [ ] SSH transport layer
 - [ ] Begin more user-friendly interface (will be separate project)
 - [ ] Keyboard support
@@ -48,4 +48,5 @@ mother.
 ### Future directions ###
 
 - App-specific drivers (e.g. browser plugin for Soundcloud)
+- IME for client-side auto-complete (etc.)
 - Linux support
