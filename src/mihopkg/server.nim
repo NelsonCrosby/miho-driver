@@ -6,12 +6,22 @@ import subsystem
 import subsystem.mouse
 
 
+const MihoDefaultPort* = Port(6446)
+
+
 type
   MihoServer* = ref MihoServerObj
   MihoServerObj = object
     svrSock: AsyncSocket
     subsystems: seq[ref Subsystem]
-  
+    stopping: bool
+    events: MihoServerEvents
+
+  MihoClientEvent* = proc(address: string): Future[void]
+  MihoServerEvents = object
+    connect: MihoClientEvent
+    disconnect: MihoClientEvent
+
   MihoCoreSubsystem = object of Subsystem
     svr: MihoServer
 
@@ -32,8 +42,15 @@ method handleCommand*(
     result.response.items[i - 1] = item
 
 
+proc onConnect*(miho: MihoServer, callback: MihoClientEvent) =
+  miho.events.connect = callback
+
+proc onDisconnect*(miho: MihoServer, callback: MihoClientEvent) =
+  miho.events.disconnect = callback
+
 proc newMihoServer*(port: Port, address: string = ""): MihoServer =
   new(result)
+  result.stopping = false
 
   result.svrSock = newAsyncSocket(buffered = false)
   result.svrSock.setSockOpt(OptReuseAddr, true)
@@ -45,6 +62,11 @@ proc newMihoServer*(port: Port, address: string = ""): MihoServer =
     coreSubsystem,
     newMouseSubsystem(),
   ]
+
+  result.onConnect proc(address: string) {.async.} =
+    echo "hello ", address
+  result.onDisconnect proc(address: string) {.async.} =
+    echo "goodbye ", address
 
 
 proc createError(code: int, message: string): CborObject =
@@ -62,6 +84,10 @@ proc handleClient(miho: MihoServer; address: string; client: AsyncSocket) {.asyn
   var parser = newCborParser()
 
   while true:
+    if miho.stopping:
+      client.close()
+      return
+
     let recv = await client.recv(1024)
     if recv.len == 0:
       client.close()
@@ -108,7 +134,7 @@ proc handleClient(miho: MihoServer; address: string; client: AsyncSocket) {.asyn
         elif msg.items[1].kind != cboInteger:
           error = true
           errorMsg = "message command (1) must be of kind integer"
-        
+
         if error:
           msg = createError(int(MihoErrorCode.message), errorMsg)
           await client.send(msg.encode())
@@ -166,6 +192,9 @@ proc handleClient(miho: MihoServer; address: string; client: AsyncSocket) {.asyn
 proc serve*(miho: MihoServer) {.async.} =
   miho.svrSock.listen()
 
-  while true:
+  while not miho.stopping:
     let (address, client) = await miho.svrSock.acceptAddr()
     asyncCheck miho.handleClient(address, client)
+
+proc stop*(miho: MihoServer) =
+  miho.stopping = true
