@@ -3,7 +3,7 @@ import asyncnet, asyncdispatch
 import error
 import cbor
 import subsystem
-import subsystem.mouse
+import subsystem/mouse
 
 
 const MihoDefaultPort* = Port(6446)
@@ -80,18 +80,19 @@ proc createError(code: int, message: string): CborObject =
 
 
 proc handleClient(miho: MihoServer; address: string; client: AsyncSocket) {.async.} =
-  echo "hello ", address
+  await miho.events.connect(address)
   var parser = newCborParser()
 
   while true:
     if miho.stopping:
+      await miho.events.disconnect(address)
       client.close()
       return
 
     let recv = await client.recv(1024)
     if recv.len == 0:
+      await miho.events.disconnect(address)
       client.close()
-      echo "goodbye ", address
       return
 
     parser.add(recv)
@@ -116,8 +117,8 @@ proc handleClient(miho: MihoServer; address: string; client: AsyncSocket) {.asyn
 
       if error:
         await client.send(msg.encode())
+        await miho.events.disconnect(address)
         client.close()
-        echo "goodbye ", address, " (error in parsing cbor)"
         return
 
       if complete:
@@ -138,8 +139,8 @@ proc handleClient(miho: MihoServer; address: string; client: AsyncSocket) {.asyn
         if error:
           msg = createError(int(MihoErrorCode.message), errorMsg)
           await client.send(msg.encode())
+          await miho.events.disconnect(address)
           client.close()
-          echo "goodbye ", address, " (invalid message)"
           return
 
         var items = msg.items
@@ -183,18 +184,36 @@ proc handleClient(miho: MihoServer; address: string; client: AsyncSocket) {.asyn
           let msg = message.encode()
           await client.send(msg)
           if error:
+            await miho.events.disconnect(address)
             client.close()
-            echo "goodbye ", address,
-              " (error in processing command ", subsystem, ":", command, ")"
             return
+
+
+proc remove[T](a: var seq[T], value: T): int {.discardable.} =
+  result = -1
+  for idx, it in a.pairs:
+    if it == value:
+      result = idx
+      break
+
+  if result >= 0:
+    a.delete(result)
 
 
 proc serve*(miho: MihoServer) {.async.} =
   miho.svrSock.listen()
+  var clients: seq[Future[void]] = @[]
 
   while not miho.stopping:
     let (address, client) = await miho.svrSock.acceptAddr()
-    asyncCheck miho.handleClient(address, client)
+    let cfut = miho.handleClient(address, client)
+    clients.add(cfut)
+    cfut.addCallback proc (f: Future[void]) =
+      echo "removing ", clients.remove(f)
+  
+  for cfut in clients:
+    await cfut
+
 
 proc stop*(miho: MihoServer) =
   miho.stopping = true
