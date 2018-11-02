@@ -31,8 +31,8 @@ method handleCommand*(
       arguments[0].checkKind("dx", 0, cboInteger)
       arguments[1].checkKind("dy", 1, cboInteger)
 
-      let dx = arguments[0].value
-      let dy = arguments[1].value
+      let dx = int(arguments[0].valueInt)
+      let dy = int(arguments[1].valueInt)
       mouseMove(dx, dy)
 
     of mcButton:
@@ -40,8 +40,8 @@ method handleCommand*(
       arguments[0].checkKind("button", 0, cboInteger)
       arguments[1].checkKind("down", 1, cboBoolean)
 
-      let btn = arguments[0].value
-      let isDown = arguments[1].enabled
+      let btn = arguments[0].valueInt
+      let isDown = arguments[1].isSet
 
       checkTrue("button", 0, "be a valid button",
         btn == int(mmbLeft) or

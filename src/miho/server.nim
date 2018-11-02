@@ -1,7 +1,7 @@
 import strutils
 import asyncnet, asyncdispatch
 import error
-import cbor
+import nxcbor
 import subsystem
 import subsystem/mouse
 
@@ -73,7 +73,7 @@ proc createError(code: int, message: string): CborObject =
   result.kind = cboArray
   result.items.newSeq(2)
   result.items[0].kind = cboInteger
-  result.items[0].value = code
+  result.items[0].valueInt = code
   result.items[1].kind = cboString
   result.items[1].isText = true
   result.items[1].data = message
@@ -81,7 +81,7 @@ proc createError(code: int, message: string): CborObject =
 
 proc handleClient(miho: MihoServer; address: string; client: AsyncSocket) {.async.} =
   await miho.events.connect(address)
-  var parser = newCborParser()
+  var parser = newCborObjectParser()
 
   while true:
     if miho.stopping:
@@ -90,6 +90,7 @@ proc handleClient(miho: MihoServer; address: string; client: AsyncSocket) {.asyn
       return
 
     let recv = await client.recv(1024)
+    echo "got ", recv.toHex()
     if recv.len == 0:
       await miho.events.disconnect(address)
       client.close()
@@ -102,8 +103,8 @@ proc handleClient(miho: MihoServer; address: string; client: AsyncSocket) {.asyn
         msg: CborObject
         error: bool = false
       try:
-        (complete, msg) = parser.parse()
-      except CborParseError:
+        (msg, complete) = parser.next()
+      except CborObjectParseError:
         error = true
         msg = createError(int(MihoErrorCode.cborParse), getCurrentExceptionMsg())
       except Exception:
@@ -144,8 +145,8 @@ proc handleClient(miho: MihoServer; address: string; client: AsyncSocket) {.asyn
           return
 
         var items = msg.items
-        let subsystem = items[0].value
-        let command = items[1].value
+        let subsystem = int(items[0].valueInt)
+        let command = int(items[1].valueInt)
         let arguments = items[2..items.high]
 
         var
@@ -153,6 +154,7 @@ proc handleClient(miho: MihoServer; address: string; client: AsyncSocket) {.asyn
           respond = true
           response: CborObject
         try:
+          echo subsystem, ":", command, "(", arguments.len, ")"
           (status, response) =
             miho.subsystems[subsystem].handleCommand(command, arguments)
           respond = status >= 0
@@ -176,9 +178,9 @@ proc handleClient(miho: MihoServer; address: string; client: AsyncSocket) {.asyn
           message.kind = cboArray
           message.items.newSeq(3)
           message.items[0].kind = cboInteger
-          message.items[0].value = subsystem
+          message.items[0].valueInt = subsystem
           message.items[1].kind = cboInteger
-          message.items[1].value = status
+          message.items[1].valueInt = status
           message.items[2] = response
 
           let msg = message.encode()

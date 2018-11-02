@@ -1,6 +1,6 @@
-import cbor
-export cbor.CborObject
-export cbor.CborObjectKind
+import nxcbor
+export nxcbor.CborObject
+export nxcbor.CborObjectKind
 
 
 type

@@ -11,6 +11,7 @@ binDir        = "build"
 
 # Dependencies
 requires "nim >= 0.18.0"
+requires "https://github.com/NelsonCrosby/nim-cbor >= 0.2.2"
 
 when defined(windows):
   requires "winim >= 2.5"

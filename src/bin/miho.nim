@@ -3,7 +3,6 @@ import parseopt
 import asyncdispatch
 import asyncfile
 import ../miho/server
-import ../miho/cbor
 
 
 proc help() =

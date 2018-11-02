@@ -1,4 +1,4 @@
-import cbor
+import nxcbor
 
 
 type
