@@ -55,7 +55,9 @@ struct m_sock_op_accept {
 struct m_sock *m_sock_open(struct m_io *io, int port)
 {
     if (!init()) {
-		exc_IOError_raiseLastError(exc_SocketError, "Failed to initialize winsock");
+		exc_IOError_raiseLastError(
+            exc_SocketError, "Failed to initialize winsock"
+        );
         return NULL;
     }
 
@@ -70,12 +72,18 @@ struct m_sock *m_sock_open(struct m_io *io, int port)
     hints.ai_flags = AI_PASSIVE;
 
     if (getaddrinfo(NULL, port_str, &hints, &sysaddr)) {
-		exc_IOError_raiseLastError(exc_SocketError, "Failed to configure socket");
+		exc_IOError_raiseLastError(
+            exc_SocketError, "Failed to configure socket"
+        );
         return NULL;
     }
 
     SOCKET syssock = INVALID_SOCKET;
-    syssock = socket(sysaddr->ai_family, sysaddr->ai_socktype, sysaddr->ai_protocol);
+    syssock = socket(
+        sysaddr->ai_family,
+        sysaddr->ai_socktype,
+        sysaddr->ai_protocol
+    );
     if (syssock == INVALID_SOCKET) {
 		exc_IOError_raiseLastError(exc_SocketError, "Failed to create socket");
         freeaddrinfo(sysaddr);
@@ -102,7 +110,9 @@ struct m_sock *m_sock_open(struct m_io *io, int port)
         &unused, NULL, NULL
     );
     if (result_ioctl == SOCKET_ERROR) {
-		exc_IOError_raiseLastError(exc_SocketError, "Failed to find WSAAcceptEx");
+		exc_IOError_raiseLastError(
+            exc_SocketError, "Failed to find WSAAcceptEx"
+        );
         freeaddrinfo(sysaddr);
         closesocket(syssock);
         return NULL;
@@ -151,13 +161,18 @@ static struct m_client *m_client_new(
 
 static void m_sock_done_accept(struct m_sock_op_accept *op, int n_bytes)
 {
-    int result_ol = GetOverlappedResult((HANDLE) op->sock->syssock, &op->io_header.overlapped.basic, &n_bytes, FALSE);
+    int result_ol = GetOverlappedResult(
+        (HANDLE) op->sock->syssock, &op->io_header.overlapped.basic,
+        &n_bytes, FALSE
+    );
 
 	struct m_client *client = NULL;
 	if (result_ol) {
 		client = m_client_new(op->sock, op->syssock, op->outbuf);
 	} else {
-		exc_IOError_raiseLastError(exc_SocketError, "Accept task returned error");
+		exc_IOError_raiseLastError(
+            exc_SocketError, "Accept task returned error"
+        );
 	}
     op->callback(op->userdata, op->sock, client);
 }
@@ -177,7 +192,9 @@ int m_sock_accept(
         sock->sysaddr->ai_protocol
     );
     if (acc_sock == INVALID_SOCKET) {
-		exc_IOError_raiseLastError(exc_SocketError, "Failed to create client socket");
+		exc_IOError_raiseLastError(
+            exc_SocketError, "Failed to create client socket"
+        );
         m_sock_close(sock);
         return 0;
     }
@@ -203,7 +220,9 @@ int m_sock_accept(
             // Will be handled async-ly
             return 1;
         } else {
-			exc_IOError_raiseLastError(exc_SocketError, "Accept call returned error");
+			exc_IOError_raiseLastError(
+                exc_SocketError, "Accept call returned error"
+            );
             free(op);
             m_sock_close(sock);
             return 0;
@@ -419,7 +438,9 @@ int m_client_read(
 		case WSA_IO_PENDING:
 			break;
 		default:
-			exc_IOError_raiseLastError(exc_ClientError, "Recv call returned error");
+			exc_IOError_raiseLastError(
+                exc_ClientError, "Recv call returned error"
+            );
 			m_client_op_clear(&op->super);
 			return 0;
 		}
@@ -461,7 +482,9 @@ int m_client_write(
 		case WSA_IO_PENDING:
 			break;
 		default:
-			exc_IOError_raiseLastError(exc_IOError, "Send call returned error");
+			exc_IOError_raiseLastError(
+                exc_IOError, "Send call returned error"
+            );
 			m_client_op_clear(&op->super);
 			return 0;
 		}

@@ -50,7 +50,8 @@ int m_io_step(struct m_io *io, int timeout)
         )
     ) {
         for (int i = 0; i < pop_count; i += 1) {
-			struct m_io_oper *op = (struct m_io_oper *) ol_ents[i].lpOverlapped;
+			struct m_io_oper *op =
+                (struct m_io_oper *) ol_ents[i].lpOverlapped;
 			op->on_complete(op, ol_ents[i].dwNumberOfBytesTransferred);
         }
     }
@@ -60,7 +61,9 @@ int m_io_step(struct m_io *io, int timeout)
         case WAIT_IO_COMPLETION:
             return 1;
         default:
-			exc_IOError_raiseLastError(exc_IOError, "Failed to get IOCP completion");
+			exc_IOError_raiseLastError(
+                exc_IOError, "Failed to get IOCP completion"
+            );
             return 0;
     }
 }
@@ -86,9 +89,13 @@ void _m_io_close_enqueue(
 
 int _m_iocp_add(struct m_io *io, HANDLE handle)
 {
-    HANDLE result = CreateIoCompletionPort(handle, io->iocp, (ULONG_PTR) NULL, 0);
+    HANDLE result = CreateIoCompletionPort(
+        handle, io->iocp, (ULONG_PTR) NULL, 0
+    );
     if (result == NULL) {
-		exc_IOError_raiseLastError(exc_IOError, "Failed to add handle to IOCP");
+		exc_IOError_raiseLastError(
+            exc_IOError, "Failed to add handle to IOCP"
+        );
         return 0;
     }
 
