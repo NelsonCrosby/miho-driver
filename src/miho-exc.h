@@ -6,18 +6,18 @@
 
 typedef void *exc_value_t;
 typedef struct exc_type {
-	struct exc_type *exc_parent;
-	const char *exc_name;
-	void (*exc_clear)(exc_value_t exc_value);
-	const char *(*exc_get_message)(exc_value_t exc_value);
+    struct exc_type *exc_parent;
+    const char *exc_name;
+    void (*exc_clear)(exc_value_t exc_value);
+    const char *(*exc_get_message)(exc_value_t exc_value);
 } *exc_type_t;
 
 #define _exc_ID(name, id) exc_ ## name ## _ ## id
 
 #ifdef _MSC_VER
 #define EXC_TYPE_(parent, name, ...) \
-	struct exc_type _exc_ID(name, type) = \
-	{ parent, #name, __VA_ARGS__ }
+    struct exc_type _exc_ID(name, type) = \
+    { parent, #name, __VA_ARGS__ }
 #else
 #define EXC_TYPE_(parent, name, ...) \
     struct exc_type _exc_ID(name, type) = \
@@ -31,8 +31,8 @@ typedef struct exc_type {
 #define EXC_TYPE_X(parent, name) \
     EXC_TYPE_(&_exc_ID(parent, type), name, NULL, NULL)
 #define EXC_HEADER(name) \
-	extern struct exc_type _exc_ID(name, type); \
-	extern const exc_type_t exc_ ## name
+    extern struct exc_type _exc_ID(name, type); \
+    extern const exc_type_t exc_ ## name
 #define EXC_DEFN(name) \
     extern const exc_type_t exc_ ## name = &_exc_ID(name, type)
 #define EXC_DECL(parent, name) \
@@ -64,9 +64,9 @@ extern exc_type_t exc_active_type;
 extern exc_value_t exc_active_value;
 
 struct exc_cause_entry {
-	struct exc_cause_entry *cause_cause;
-	exc_type_t cause_type;
-	exc_value_t cause_value;
+    struct exc_cause_entry *cause_cause;
+    exc_type_t cause_type;
+    exc_value_t cause_value;
 } *exc_active_cause;
 
 
@@ -75,75 +75,75 @@ struct exc_cause_entry {
 
 inline int exc_is(exc_type_t exc_check_type)
 {
-	for (
-		exc_type_t type = exc_active_type;
-		type != exc_Error->exc_parent;
-		type = type->exc_parent
-		) {
-		if (type == exc_check_type) {
-			return 1;
-		}
-	}
+    for (
+        exc_type_t type = exc_active_type;
+        type != exc_Error->exc_parent;
+        type = type->exc_parent
+        ) {
+        if (type == exc_check_type) {
+            return 1;
+        }
+    }
 
-	return 0;
+    return 0;
 }
 
 inline void exc_raise(exc_type_t exc_type, exc_value_t exc_value)
 {
-	if (exc_active_type) {
-		struct exc_cause_entry *cause = malloc(sizeof(*cause));
-		cause->cause_cause = exc_active_cause;
-		cause->cause_type = exc_active_type;
-		cause->cause_value = exc_active_value;
-		exc_active_cause = cause;
-	}
+    if (exc_active_type) {
+        struct exc_cause_entry *cause = malloc(sizeof(*cause));
+        cause->cause_cause = exc_active_cause;
+        cause->cause_type = exc_active_type;
+        cause->cause_value = exc_active_value;
+        exc_active_cause = cause;
+    }
 
-	exc_active_type = exc_type;
-	exc_active_value = exc_value;
+    exc_active_type = exc_type;
+    exc_active_value = exc_value;
 }
 
 inline void exc_clear()
 {
-	if (exc_active_type) {
-		for (
-			exc_type_t type = exc_active_type;
-			type != NULL;
-			type = type->exc_parent
-		) {
-			if (type->exc_clear != NULL) {
-				type->exc_clear(exc_active_value);
-				break;
-			}
-		}
+    if (exc_active_type) {
+        for (
+            exc_type_t type = exc_active_type;
+            type != NULL;
+            type = type->exc_parent
+        ) {
+            if (type->exc_clear != NULL) {
+                type->exc_clear(exc_active_value);
+                break;
+            }
+        }
 
-		if (exc_active_cause) {
-			struct exc_cause_entry *cause = exc_active_cause;
-			exc_active_cause = cause->cause_cause;
-			exc_active_type = cause->cause_type;
-			exc_active_value = cause->cause_value;
-			free(cause);
-		} else {
-			exc_active_type = exc_Error->exc_parent;
-			exc_active_value = (exc_value_t)0;
-		}
-	}
+        if (exc_active_cause) {
+            struct exc_cause_entry *cause = exc_active_cause;
+            exc_active_cause = cause->cause_cause;
+            exc_active_type = cause->cause_type;
+            exc_active_value = cause->cause_value;
+            free(cause);
+        } else {
+            exc_active_type = exc_Error->exc_parent;
+            exc_active_value = (exc_value_t)0;
+        }
+    }
 }
 
 inline const char *exc_active_message()
 {
-	if (exc_active_type) {
-		for (
-			exc_type_t type = exc_active_type;
-			type != NULL;
-			type = type->exc_parent
-		) {
-			if (type->exc_get_message != NULL) {
-				return type->exc_get_message(exc_active_value);
-			}
-		}
-	}
+    if (exc_active_type) {
+        for (
+            exc_type_t type = exc_active_type;
+            type != NULL;
+            type = type->exc_parent
+        ) {
+            if (type->exc_get_message != NULL) {
+                return type->exc_get_message(exc_active_value);
+            }
+        }
+    }
 
-	return NULL;
+    return NULL;
 }
 
 void exc_Error_raise(exc_type_t exc_type, const char *fmt, ...);

@@ -10,14 +10,14 @@ struct m_io *m_io_open()
 {
     HANDLE iocp = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 1);
     if (iocp == NULL) {
-		exc_IOError_raiseLastError(exc_IOError, "Failed to create IOCP");
+        exc_IOError_raiseLastError(exc_IOError, "Failed to create IOCP");
         return NULL;
     }
 
     struct m_io *io = malloc(sizeof(*io));
     io->iocp = iocp;
-	io->cq = NULL;
-	io->cq_tail = NULL;
+    io->cq = NULL;
+    io->cq_tail = NULL;
     return io;
 }
 
@@ -50,9 +50,9 @@ int m_io_step(struct m_io *io, int timeout)
         )
     ) {
         for (int i = 0; i < pop_count; i += 1) {
-			struct m_io_oper *op =
+            struct m_io_oper *op =
                 (struct m_io_oper *) ol_ents[i].lpOverlapped;
-			op->on_complete(op, ol_ents[i].dwNumberOfBytesTransferred);
+            op->on_complete(op, ol_ents[i].dwNumberOfBytesTransferred);
         }
     }
 
@@ -61,7 +61,7 @@ int m_io_step(struct m_io *io, int timeout)
         case WAIT_IO_COMPLETION:
             return 1;
         default:
-			exc_IOError_raiseLastError(
+            exc_IOError_raiseLastError(
                 exc_IOError, "Failed to get IOCP completion"
             );
             return 0;
@@ -93,7 +93,7 @@ int _m_iocp_add(struct m_io *io, HANDLE handle)
         handle, io->iocp, (ULONG_PTR) NULL, 0
     );
     if (result == NULL) {
-		exc_IOError_raiseLastError(
+        exc_IOError_raiseLastError(
             exc_IOError, "Failed to add handle to IOCP"
         );
         return 0;
@@ -105,32 +105,32 @@ int _m_iocp_add(struct m_io *io, HANDLE handle)
 
 void exc_IOError_raiseLastError(exc_type_t exc_type, const char *fmt, ...)
 {
-	va_list va;
-	va_start(va, fmt);
-	size_t buflen = strlen(fmt) + 128;
-	char *buffer = malloc(buflen);
-	int x = vsnprintf(buffer, buflen, fmt, va);
-	va_end(va);
+    va_list va;
+    va_start(va, fmt);
+    size_t buflen = strlen(fmt) + 128;
+    char *buffer = malloc(buflen);
+    int x = vsnprintf(buffer, buflen, fmt, va);
+    va_end(va);
 
-	LPVOID lpMsgBuf;
-	DWORD errcode = GetLastError();
+    LPVOID lpMsgBuf;
+    DWORD errcode = GetLastError();
 
-	FormatMessage(
-		FORMAT_MESSAGE_ALLOCATE_BUFFER |
-		FORMAT_MESSAGE_FROM_SYSTEM |
-		FORMAT_MESSAGE_IGNORE_INSERTS,
-		NULL, errcode,
-		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-		(LPTSTR)&lpMsgBuf, 0, NULL
-	);
+    FormatMessage(
+        FORMAT_MESSAGE_ALLOCATE_BUFFER |
+        FORMAT_MESSAGE_FROM_SYSTEM |
+        FORMAT_MESSAGE_IGNORE_INSERTS,
+        NULL, errcode,
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        (LPTSTR)&lpMsgBuf, 0, NULL
+    );
 
-	static const char *const finalfmt = "%s (from system error %d: %s)";
-	buflen = strlen(buffer) + strlen(finalfmt) + strlen(lpMsgBuf);
-	char *finalbuffer = malloc(buflen);
-	x = snprintf(finalbuffer, buflen, finalfmt, buffer, errcode, lpMsgBuf);
+    static const char *const finalfmt = "%s (from system error %d: %s)";
+    buflen = strlen(buffer) + strlen(finalfmt) + strlen(lpMsgBuf);
+    char *finalbuffer = malloc(buflen);
+    x = snprintf(finalbuffer, buflen, finalfmt, buffer, errcode, lpMsgBuf);
 
-	free(buffer);
-	LocalFree(lpMsgBuf);
+    free(buffer);
+    LocalFree(lpMsgBuf);
 
-	exc_raise(exc_type, (exc_value_t) finalbuffer);
+    exc_raise(exc_type, (exc_value_t) finalbuffer);
 }

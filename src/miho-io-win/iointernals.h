@@ -23,11 +23,11 @@ struct m_io_close_queue {
 };
 
 struct m_io_oper {
-	union {
-		OVERLAPPED basic;
-		WSAOVERLAPPED wsa;
-	} overlapped;
-	m_io_cb_done on_complete;
+    union {
+        OVERLAPPED basic;
+        WSAOVERLAPPED wsa;
+    } overlapped;
+    m_io_cb_done on_complete;
 };
 
 struct m_io {

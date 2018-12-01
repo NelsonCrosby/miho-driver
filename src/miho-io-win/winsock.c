@@ -55,7 +55,7 @@ struct m_sock_op_accept {
 struct m_sock *m_sock_open(struct m_io *io, int port)
 {
     if (!init()) {
-		exc_IOError_raiseLastError(
+        exc_IOError_raiseLastError(
             exc_SocketError, "Failed to initialize winsock"
         );
         return NULL;
@@ -72,7 +72,7 @@ struct m_sock *m_sock_open(struct m_io *io, int port)
     hints.ai_flags = AI_PASSIVE;
 
     if (getaddrinfo(NULL, port_str, &hints, &sysaddr)) {
-		exc_IOError_raiseLastError(
+        exc_IOError_raiseLastError(
             exc_SocketError, "Failed to configure socket"
         );
         return NULL;
@@ -85,7 +85,7 @@ struct m_sock *m_sock_open(struct m_io *io, int port)
         sysaddr->ai_protocol
     );
     if (syssock == INVALID_SOCKET) {
-		exc_IOError_raiseLastError(exc_SocketError, "Failed to create socket");
+        exc_IOError_raiseLastError(exc_SocketError, "Failed to create socket");
         freeaddrinfo(sysaddr);
         return NULL;
     }
@@ -94,7 +94,7 @@ struct m_sock *m_sock_open(struct m_io *io, int port)
         syssock, sysaddr->ai_addr, (int)sysaddr->ai_addrlen
     );
     if (result_bind == SOCKET_ERROR) {
-		exc_IOError_raiseLastError(exc_SocketError, "Failed to bind socket");
+        exc_IOError_raiseLastError(exc_SocketError, "Failed to bind socket");
         freeaddrinfo(sysaddr);
         closesocket(syssock);
         return NULL;
@@ -110,7 +110,7 @@ struct m_sock *m_sock_open(struct m_io *io, int port)
         &unused, NULL, NULL
     );
     if (result_ioctl == SOCKET_ERROR) {
-		exc_IOError_raiseLastError(
+        exc_IOError_raiseLastError(
             exc_SocketError, "Failed to find WSAAcceptEx"
         );
         freeaddrinfo(sysaddr);
@@ -140,13 +140,13 @@ int m_sock_listen(struct m_sock *sock, int backlog)
     }
 
     if (listen(sock->syssock, backlog) == SOCKET_ERROR) {
-		exc_IOError_raiseLastError(exc_SocketError, "Failed to listen");
+        exc_IOError_raiseLastError(exc_SocketError, "Failed to listen");
         m_sock_close(sock);
         return 0;
     }
 
     if (!_m_iocp_add(sock->io, (HANDLE) sock->syssock)) {
-		// Exception already raised by _m_iocp_add
+        // Exception already raised by _m_iocp_add
         m_sock_close(sock);
         return 0;
     }
@@ -155,8 +155,8 @@ int m_sock_listen(struct m_sock *sock, int backlog)
 }
 
 static struct m_client *m_client_new(
-	struct m_sock *sock, SOCKET syssock,
-	const char *accept_buf
+    struct m_sock *sock, SOCKET syssock,
+    const char *accept_buf
 );
 
 static void m_sock_done_accept(struct m_sock_op_accept *op, int n_bytes)
@@ -166,14 +166,14 @@ static void m_sock_done_accept(struct m_sock_op_accept *op, int n_bytes)
         &n_bytes, FALSE
     );
 
-	struct m_client *client = NULL;
-	if (result_ol) {
-		client = m_client_new(op->sock, op->syssock, op->outbuf);
-	} else {
-		exc_IOError_raiseLastError(
+    struct m_client *client = NULL;
+    if (result_ol) {
+        client = m_client_new(op->sock, op->syssock, op->outbuf);
+    } else {
+        exc_IOError_raiseLastError(
             exc_SocketError, "Accept task returned error"
         );
-	}
+    }
     op->callback(op->userdata, op->sock, client);
 }
 
@@ -192,7 +192,7 @@ int m_sock_accept(
         sock->sysaddr->ai_protocol
     );
     if (acc_sock == INVALID_SOCKET) {
-		exc_IOError_raiseLastError(
+        exc_IOError_raiseLastError(
             exc_SocketError, "Failed to create client socket"
         );
         m_sock_close(sock);
@@ -208,11 +208,11 @@ int m_sock_accept(
     op->userdata = userdata;
     op->recv_len = 0;
 
-	int result_acc = sock->acc_ex(
-		sock->syssock, acc_sock,
-		op->outbuf, M_SOCK_OUTBUF_RECVLEN,
-		M_SOCK_ADDRLEN, M_SOCK_ADDRLEN,
-		&op->recv_len, &op->io_header.overlapped.basic
+    int result_acc = sock->acc_ex(
+        sock->syssock, acc_sock,
+        op->outbuf, M_SOCK_OUTBUF_RECVLEN,
+        M_SOCK_ADDRLEN, M_SOCK_ADDRLEN,
+        &op->recv_len, &op->io_header.overlapped.basic
     );
 
     if (result_acc == FALSE) {
@@ -220,7 +220,7 @@ int m_sock_accept(
             // Will be handled async-ly
             return 1;
         } else {
-			exc_IOError_raiseLastError(
+            exc_IOError_raiseLastError(
                 exc_SocketError, "Accept call returned error"
             );
             free(op);
@@ -275,7 +275,7 @@ static struct m_client_op *m_client_op_new(
     op->io_header.on_complete = callback;
     op->client = client;
     op->chain_prev = op->chain_next = NULL;
-	return op;
+    return op;
 }
 
 static void m_client_op_append(struct m_client_op *op)
@@ -337,7 +337,7 @@ static struct m_client *m_client_new(
     );
 
     if (!_m_iocp_add(client->io, (HANDLE) syssock)) {
-		// Exception already raised by _m_iocp_add
+        // Exception already raised by _m_iocp_add
         m_client_close(client);
         return NULL;
     }
@@ -347,10 +347,10 @@ static struct m_client *m_client_new(
 
 static void m_client_actually_close(struct m_client *client)
 {
-	closesocket(client->syssock);
-	if (client->close_callback != NULL) {
-		client->close_callback(client->close_userdata, client);
-	}
+    closesocket(client->syssock);
+    if (client->close_callback != NULL) {
+        client->close_callback(client->close_userdata, client);
+    }
     free(client);
 }
 
@@ -390,11 +390,11 @@ static void m_client_done_rw(struct m_client_op_rw *op, int n_bytes)
         &n_bytes, FALSE
     );
 
-	if (result_ol) {
-		exc_IOError_raiseLastError(exc_ClientError, "R/W task returned error");
-	}
+    if (result_ol) {
+        exc_IOError_raiseLastError(exc_ClientError, "R/W task returned error");
+    }
 
-	struct m_client *client = op->super.client;
+    struct m_client *client = op->super.client;
     op->callback(
         op->userdata, client, result_ol, n_bytes,
         op->buffer.len, op->buffer.buf
@@ -410,44 +410,44 @@ int m_client_read(
     m_client_cb_rw callback, void *userdata
 )
 {
-	if (callback == NULL) {
-		exc_Error_raise(exc_CallerError, "Must specify a callback");
-		return 0;
-	} else if (client->closing) {
-		exc_Error_raise(exc_ClientError, "Read on a closing socket");
-		return 0;
-	}
+    if (callback == NULL) {
+        exc_Error_raise(exc_CallerError, "Must specify a callback");
+        return 0;
+    } else if (client->closing) {
+        exc_Error_raise(exc_ClientError, "Read on a closing socket");
+        return 0;
+    }
 
-	struct m_client_op_rw *op = (struct m_client_op_rw *) m_client_op_new(
+    struct m_client_op_rw *op = (struct m_client_op_rw *) m_client_op_new(
         client, sizeof(*op), (m_io_cb_done) m_client_done_rw
     );
-	op->callback = callback;
-	op->userdata = userdata;
-	op->flags = 0;
-	op->buffer.len = (ULONG) buffer_length;
-	op->buffer.buf = buffer;
+    op->callback = callback;
+    op->userdata = userdata;
+    op->flags = 0;
+    op->buffer.len = (ULONG) buffer_length;
+    op->buffer.buf = buffer;
 
-	int result_recv = WSARecv(
-		client->syssock, &op->buffer, 1,
-		&op->done_len, &op->flags,
-		&op->super.io_header.overlapped.wsa, NULL
-	);
+    int result_recv = WSARecv(
+        client->syssock, &op->buffer, 1,
+        &op->done_len, &op->flags,
+        &op->super.io_header.overlapped.wsa, NULL
+    );
 
-	if (result_recv == SOCKET_ERROR) {
-		switch (WSAGetLastError()) {
-		case WSA_IO_PENDING:
-			break;
-		default:
-			exc_IOError_raiseLastError(
+    if (result_recv == SOCKET_ERROR) {
+        switch (WSAGetLastError()) {
+        case WSA_IO_PENDING:
+            break;
+        default:
+            exc_IOError_raiseLastError(
                 exc_ClientError, "Recv call returned error"
             );
-			m_client_op_clear(&op->super);
-			return 0;
-		}
-	}
+            m_client_op_clear(&op->super);
+            return 0;
+        }
+    }
 
     m_client_op_append(&op->super);
-	return 1;
+    return 1;
 }
 
 int m_client_write(
@@ -455,41 +455,41 @@ int m_client_write(
     m_client_cb_rw callback, void *userdata
 )
 {
-	if (callback == NULL) {
-		exc_Error_raise(exc_CallerError, "Must specify a callback");
-		return 0;
-	} else if (client->closing) {
-		exc_Error_raise(exc_ClientError, "Write on a closing socket");
-	}
+    if (callback == NULL) {
+        exc_Error_raise(exc_CallerError, "Must specify a callback");
+        return 0;
+    } else if (client->closing) {
+        exc_Error_raise(exc_ClientError, "Write on a closing socket");
+    }
 
-	struct m_client_op_rw *op = (struct m_client_op_rw *) m_client_op_new(
+    struct m_client_op_rw *op = (struct m_client_op_rw *) m_client_op_new(
         client, sizeof(*op), (m_io_cb_done) m_client_done_rw
     );
-	op->callback = callback;
-	op->userdata = userdata;
-	op->flags = 0;
-	op->buffer.len = (ULONG) data_length;
-	op->buffer.buf = data;
+    op->callback = callback;
+    op->userdata = userdata;
+    op->flags = 0;
+    op->buffer.len = (ULONG) data_length;
+    op->buffer.buf = data;
 
-	int result_recv = WSASend(
-		client->syssock, &op->buffer, 1,
-		&op->done_len, op->flags,
-		&op->super.io_header.overlapped.wsa, NULL
-	);
+    int result_recv = WSASend(
+        client->syssock, &op->buffer, 1,
+        &op->done_len, op->flags,
+        &op->super.io_header.overlapped.wsa, NULL
+    );
 
-	if (result_recv == SOCKET_ERROR) {
-		switch (WSAGetLastError()) {
-		case WSA_IO_PENDING:
-			break;
-		default:
-			exc_IOError_raiseLastError(
+    if (result_recv == SOCKET_ERROR) {
+        switch (WSAGetLastError()) {
+        case WSA_IO_PENDING:
+            break;
+        default:
+            exc_IOError_raiseLastError(
                 exc_IOError, "Send call returned error"
             );
-			m_client_op_clear(&op->super);
-			return 0;
-		}
-	}
+            m_client_op_clear(&op->super);
+            return 0;
+        }
+    }
 
     m_client_op_append(&op->super);
-	return 1;
+    return 1;
 }
