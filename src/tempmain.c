@@ -2,6 +2,9 @@
 #include <strsafe.h>
 #include <stdio.h>
 
+#include "cbor.h"
+
+#include "miho-internal.h"
 #include "miho-io.h"
 
 
@@ -70,7 +73,7 @@ static void on_accept(void *userdata, struct m_sock *sock, struct m_client *clie
 
 	if (!m_client_write(client, strlen(data), data, on_write_done, data)) {
 		printf("[%s in on_accept: !m_client_write()] %s\n",
-			   exc_active_name(), exc_active_messge());
+			   exc_active_name(), exc_active_message());
 		m_client_close(client);
 	}
 }
@@ -78,6 +81,47 @@ static void on_accept(void *userdata, struct m_sock *sock, struct m_client *clie
 
 int main()
 {
+	CborError cerr;
+	CborEncoder enc_root;
+	uint8_t buf[16];
+	cbor_encoder_init(&enc_root, buf, 16, 0);
+
+	CborEncoder enc_array;
+	cerr = cbor_encoder_create_array(&enc_root, &enc_array, 2);
+	if (cerr != CborNoError) {
+		printf("cbor_encoder_create_array error %d\n", cerr);
+		return 1;
+	}
+
+	cerr = cbor_encode_int(&enc_array, 1);
+	if (cerr != CborNoError) {
+		printf("cbor_encode_int [1] error %d\n", cerr);
+		return 1;
+	}
+
+	cerr = cbor_encode_int(&enc_array, 2);
+	if (cerr != CborNoError) {
+		printf("cbor_encode_int [2] error %d\n", cerr);
+		return 1;
+	}
+
+	cerr = cbor_encoder_close_container_checked(&enc_root, &enc_array);
+	if (cerr != CborNoError) {
+		printf("cbor_encoder_close_container_checked error %d\n", cerr);
+		return 1;
+	}
+
+	size_t len = cbor_encoder_get_buffer_size(&enc_root, buf);
+
+	static char hexvals[] = {
+		'0', '1', '2', '3', '4', '5', '6', '7',
+		'8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
+	};
+	for (size_t i = 0; i < len; i += 1) {
+		printf("%c%c", hexvals[buf[i] >> 4], hexvals[buf[i] & 7]);
+	}
+	printf(";\n");
+
     struct m_io *io = m_io_open();
 	if (io == NULL) {
 		printf("[%s in main: io == NULL] %s\n",

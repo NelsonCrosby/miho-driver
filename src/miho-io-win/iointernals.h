@@ -8,6 +8,7 @@
 #include <Windows.h>
 #include <WinSock2.h>
 
+#include "../miho-internal.h"
 #include "../miho-io.h"
 
 struct m_io_oper;

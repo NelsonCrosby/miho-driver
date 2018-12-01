@@ -100,6 +100,21 @@ struct exc_cause_entry {
  *  result = exc_assert_(some_operation(), invalid_result);
  */
 
+inline int exc_is(exc_type_t exc_check_type)
+{
+	for (
+		exc_type_t type = exc_active_type;
+		type != exc_Error->exc_parent;
+		type = type->exc_parent
+		) {
+		if (type == exc_check_type) {
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
 inline void exc_raise(exc_type_t exc_type, exc_value_t exc_value)
 {
 	if (exc_active_type) {
@@ -154,21 +169,6 @@ inline const char *exc_active_message()
 	}
 
 	return NULL;
-}
-
-inline int exc_is(exc_type_t exc_check_type)
-{
-	for (
-		exc_type_t type = exc_active_type;
-		type != exc_Error->exc_parent;
-		type = type->exc_parent
-	) {
-		if (type == exc_check_type) {
-			return 1;
-		}
-	}
-
-	return 0;
 }
 
 void exc_Error_raise(exc_type_t exc_type, const char *fmt, ...);

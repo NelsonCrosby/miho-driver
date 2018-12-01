@@ -365,7 +365,7 @@ void m_client_on_close(
 
 static void m_client_done_rw(struct m_client_op_rw *op, int n_bytes)
 {
-    int result_ol = !GetOverlappedResult(
+    int result_ol = GetOverlappedResult(
         (HANDLE) op->super.client->syssock,
         &op->super.io_header.overlapped.basic,
         &n_bytes, FALSE
