@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 
-#include "miho-internal.h"
+#include "internal.h"
 
 #define MIHO_EXT_IO     // Used by other headers to add extension APIs
 

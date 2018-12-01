@@ -1,6 +1,6 @@
 #ifndef MIHO_H_INTERNAL
 #define MIHO_H_INTERNAL
 
-#include "miho-exc.h"
+#include "exceptions.h"
 
 #endif // include guard

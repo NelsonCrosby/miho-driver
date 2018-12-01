@@ -10,7 +10,7 @@ static void on_update(
     enum miho_status status, int port, int clients
 )
 {
-    printf("got %d; { status = %d, port = %d, clients = %d }\n",
+    printf("got %d: { status = %d, port = %d, clients = %d };\n",
            what, status, port, clients);
 }
 

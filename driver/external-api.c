@@ -1,6 +1,6 @@
 #include <miho.h>
-#include "miho-internal.h"
-#include "miho-io.h"
+#include "internal.h"
+#include "m-io.h"
 
 
 struct miho {
@@ -24,7 +24,7 @@ struct miho {
     )
 
 
-miho_t miho_create(
+miho_t MIHO_EXPORT miho_create(
     int port,
     miho_update_callback_t update_callback,
     void *update_userdata
@@ -49,7 +49,7 @@ miho_t miho_create(
 }
 
 
-void miho_close(miho_t miho)
+void MIHO_EXPORT miho_close(miho_t miho)
 {
     if (
         miho->status != MIHO_STATUS_NEW &&
@@ -94,7 +94,7 @@ static void miho_on_accept(
 }
 
 
-enum miho_result miho_start(miho_t miho)
+enum miho_result MIHO_EXPORT miho_start(miho_t miho)
 {
     if (
         miho->status != MIHO_STATUS_NEW &&
@@ -126,7 +126,7 @@ enum miho_result miho_start(miho_t miho)
 }
 
 
-enum miho_result miho_stop(miho_t miho)
+enum miho_result MIHO_EXPORT miho_stop(miho_t miho)
 {
     if (miho->status != MIHO_STATUS_STARTED) {
         return MIHO_RESULT_WRONG_STATE;
@@ -143,7 +143,7 @@ enum miho_result miho_stop(miho_t miho)
 }
 
 
-enum miho_result miho_step(miho_t miho, int timeout)
+enum miho_result MIHO_EXPORT miho_step(miho_t miho, int timeout)
 {
     if (!m_io_step(miho->io, timeout)) {
         exc_clear();
@@ -154,7 +154,7 @@ enum miho_result miho_step(miho_t miho, int timeout)
 }
 
 
-enum miho_result miho_run(miho_t miho)
+enum miho_result MIHO_EXPORT miho_run(miho_t miho)
 {
     // TODO: How to stop this gracefully?
     while (m_io_step(miho->io, -1)) {}

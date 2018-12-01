@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "miho-internal.h"
+#include "exceptions.h"
 
 extern exc_type_t exc_active_type = NULL;
 extern exc_value_t exc_active_value = NULL;

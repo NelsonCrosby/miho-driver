@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-#include "iointernals.h"
+#include "m-io-internals.h"
 
 
 EXC_DECL_X(Error, IOError);

@@ -7,8 +7,8 @@ set(lib_link)
 include_directories(../include)
 include_directories("${miho_driver_BINARY_DIR}")
 set(lib_src ${lib_src}
+	external-api.c
     exceptions.c
-	miho-api.c
 )
 
 ### VENDORED DEPENDENCIES ###
@@ -28,8 +28,8 @@ set(lib_src ${lib_src}
 ### PLATFORM-SPECIFIC ###
 if(WIN32)
     # miho-io.h windows implementation sources
-    set(lib_src ${lib_src} miho-io-win/iocore.c)
-    set(lib_src ${lib_src} miho-io-win/winsock.c)
+    set(lib_src ${lib_src} platform-win/m-io-core.c)
+    set(lib_src ${lib_src} platform-win/m-io-winsock.c)
     # miho-io.h windows implementation dependencies
 	set(lib_link ${lib_link} mswsock)
 endif()
