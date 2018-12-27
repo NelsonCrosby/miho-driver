@@ -9,6 +9,7 @@ include_directories("${miho_driver_BINARY_DIR}")
 set(lib_src ${lib_src}
 	external-api.c
     exceptions.c
+	subsystems.c
 )
 
 ### VENDORED DEPENDENCIES ###

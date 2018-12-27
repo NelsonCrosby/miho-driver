@@ -390,7 +390,7 @@ static void m_client_done_rw(struct m_client_op_rw *op, int n_bytes)
         &n_bytes, FALSE
     );
 
-    if (result_ol) {
+    if (!result_ol) {
         exc_IOError_raiseLastError(exc_ClientError, "R/W task returned error");
     }
 

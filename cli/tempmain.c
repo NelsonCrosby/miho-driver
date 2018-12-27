@@ -32,6 +32,15 @@ int main()
             return 1;
     }
 
+    result = miho_run(miho);
+    switch (result) {
+        case MIHO_RESULT_OK:
+            break;
+        default:
+            printf("ERROR in miho_run: %d\n", result);
+            return 1;
+    }
+
     result = miho_stop(miho);
     switch (result) {
         case MIHO_RESULT_OK:
