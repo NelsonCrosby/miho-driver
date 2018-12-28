@@ -10,6 +10,7 @@ set(lib_src ${lib_src}
 	server.c
     exceptions.c
 	subsystems.c
+	subsystems/mouse.c
 )
 
 ### VENDORED DEPENDENCIES ###
@@ -28,9 +29,13 @@ set(lib_src ${lib_src}
 
 ### PLATFORM-SPECIFIC ###
 if(WIN32)
+	add_compile_definitions(MIHO_SUBSYSTEM_MOUSE)
     # miho-io.h windows implementation sources
-    set(lib_src ${lib_src} platform-win/m-io-core.c)
-    set(lib_src ${lib_src} platform-win/m-io-winsock.c)
+    set(lib_src ${lib_src}
+		platform-win/m-io-core.c
+		platform-win/m-io-winsock.c
+		platform-win/ctl-sendinput.c
+	)
     # miho-io.h windows implementation dependencies
 	set(lib_link ${lib_link} mswsock)
 endif()

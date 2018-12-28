@@ -74,6 +74,9 @@ int m_subsys_register(
 void m_subsys_return(struct m_subsys_call *call);
 
 extern struct m_subsys_function m_core_funcs[];
+#ifdef MIHO_SUBSYSTEM_MOUSE
+extern struct m_subsys_function m_mouse_funcs[];
+#endif
 
 inline void m_subsys_error(
     struct m_subsys_call *call, int err_code,

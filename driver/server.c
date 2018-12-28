@@ -37,7 +37,10 @@ miho_t MIHO_EXPORT miho_create(
     miho->subsys_name_len_total = 0;
     miho->subsystems = NULL;
 
-    m_subsys_register(miho, "core", m_core_funcs, NULL);
+    m_subsys_register(miho, ":", m_core_funcs, NULL);
+#ifdef MIHO_SUBSYSTEM_MOUSE
+    m_subsys_register(miho, ":mouse", m_mouse_funcs, NULL);
+#endif
 
     return miho;
 }
@@ -254,7 +257,7 @@ static int miho_on_read(
         // There's another message starting here
         size_t remaining = client->rd_buffer_pos - msgbytes;
         memmove(client->rd_buffer, client->rd_buffer + msgbytes, remaining);
-        client->rd_buffer_pos = remaining;
+        client->rd_buffer_pos = 0;
         // Recurse on the next message in the buffer
         return miho_on_read(
             client, mclient, ok,
