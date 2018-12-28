@@ -7,7 +7,7 @@ set(lib_link)
 include_directories(../include)
 include_directories("${miho_driver_BINARY_DIR}")
 set(lib_src ${lib_src}
-	external-api.c
+	server.c
     exceptions.c
 	subsystems.c
 )
